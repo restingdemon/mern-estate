@@ -49,13 +49,25 @@ export default function CreateListing() {
   }, []);
 
   const handleImageSubmit = (e) => {
-    if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
+    const maxFileSize = 2 * 1024 * 1024; // 2 MB in bytes
+    const validFiles = [];
+
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size <= maxFileSize) {
+        validFiles.push(files[i]);
+      } else {
+        setImageUploadError('One or more files exceed the 2 MB size limit.');
+        return;
+      }
+    }
+
+    if (validFiles.length > 0 && validFiles.length + formData.imageUrls.length < 7) {
       setUploading(true);
       setImageUploadError(false);
       const promises = [];
 
-      for (let i = 0; i < files.length; i++) {
-        promises.push(storeImage(files[i]));
+      for (let i = 0; i < validFiles.length; i++) {
+        promises.push(storeImage(validFiles[i]));
       }
       Promise.all(promises)
         .then((urls) => {
@@ -67,7 +79,7 @@ export default function CreateListing() {
           setUploading(false);
         })
         .catch((err) => {
-          setImageUploadError('Image upload failed (2 mb max per image)');
+          setImageUploadError('Image upload failed.');
           setUploading(false);
         });
     } else {
@@ -169,6 +181,7 @@ export default function CreateListing() {
       setLoading(false);
     }
   };
+
   return (
     <main className='p-3 max-w-4xl mx-auto'>
       <h1 className='text-3xl font-semibold text-center my-7'>
